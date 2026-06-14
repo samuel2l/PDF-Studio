@@ -5,7 +5,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
 import { compressPdf, loadPdfFile } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { formatBytes, sanitizeFilename, saveFile } from "../lib/utils";
+import { formatBytes, getUserErrorMessage, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function CompressTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -24,7 +24,7 @@ export function CompressTool() {
       const bytes = await compressPdf(pdf, quality, maxDpi);
       setResult({ bytes, ratio: bytes.length / pdf.bytes.length });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Compression failed");
+      setError(getUserErrorMessage(e, "Couldn't compress this PDF. Try again or use a different file."));
     } finally {
       setLoading(false);
     }

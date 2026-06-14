@@ -11,7 +11,7 @@ import {
   loadPdfFile,
 } from "../lib/pdf";
 import type { LoadedPdf, PagePreview } from "../types";
-import { parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
+import { getUserErrorMessage, parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function OrganizeTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -50,7 +50,7 @@ export function OrganizeTool() {
         mime: "application/pdf",
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed");
+      setError(getUserErrorMessage(e, "Couldn't save your organized PDF. Try again."));
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export function OrganizeTool() {
       setPdf(updated);
       setPages(await buildPagePreviews(updated));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Insert failed");
+      setError(getUserErrorMessage(e, "Couldn't insert those pages. Try again."));
     } finally {
       setLoading(false);
     }

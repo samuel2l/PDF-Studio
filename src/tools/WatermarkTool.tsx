@@ -5,7 +5,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
 import { addWatermark, loadPdfFile } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { sanitizeFilename, saveFile } from "../lib/utils";
+import { getUserErrorMessage, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function WatermarkTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -33,7 +33,7 @@ export function WatermarkTool() {
         mime: "application/pdf",
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Watermark failed");
+      setError(getUserErrorMessage(e, "Couldn't add the watermark. Try again."));
     } finally {
       setLoading(false);
     }

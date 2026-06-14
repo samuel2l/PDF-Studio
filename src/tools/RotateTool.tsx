@@ -6,7 +6,7 @@ import { PageGrid } from "../components/PageGrid";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
 import { buildPagePreviews, loadPdfFile, rotatePagesInPdf } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
+import { getUserErrorMessage, parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function RotateTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -44,7 +44,7 @@ export function RotateTool() {
         mime: "application/pdf",
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Rotate failed");
+      setError(getUserErrorMessage(e, "Couldn't rotate those pages. Try again."));
     } finally {
       setLoading(false);
     }

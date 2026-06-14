@@ -5,6 +5,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
 import { exportMultiplePdfs, loadPdfFile, splitPdfByRanges, splitPdfEveryPage } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
+import { getUserErrorMessage } from "../lib/utils";
 
 export function SplitTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -41,7 +42,7 @@ export function SplitTool() {
         await exportMultiplePdfs(parts);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Split failed");
+      setError(getUserErrorMessage(e, "Couldn't split this PDF. Try again."));
     } finally {
       setLoading(false);
     }

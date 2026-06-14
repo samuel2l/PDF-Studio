@@ -61,3 +61,18 @@ export function parsePageRanges(input: string, maxPage: number): number[] {
 export function basename(name: string): string {
   return name.replace(/\.[^/.]+$/, "");
 }
+
+/** User cancelled a save/open dialog — not an error worth showing. */
+export function isUserCancellation(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+/**
+ * Log the real error for debugging, return a plain-language message for the UI.
+ * Never pass raw `error.message` to users.
+ */
+export function getUserErrorMessage(error: unknown, fallback: string): string | null {
+  if (isUserCancellation(error)) return null;
+  console.error(fallback, error);
+  return fallback;
+}

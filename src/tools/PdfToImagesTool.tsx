@@ -5,6 +5,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, selectClassName } from "../components/ToolShell";
 import { exportImages, loadPdfFile, pdfToImages } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
+import { getUserErrorMessage } from "../lib/utils";
 
 export function PdfToImagesTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -22,7 +23,7 @@ export function PdfToImagesTool() {
       const images = await pdfToImages(pdf, format, quality, scale);
       await exportImages(images);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Export failed");
+      setError(getUserErrorMessage(e, "Couldn't export those pages as images. Try again."));
     } finally {
       setLoading(false);
     }

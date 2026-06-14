@@ -4,7 +4,7 @@ import { Button } from "../components/Button";
 import { FileDropzone } from "../components/FileDropzone";
 import { StatusMessage, ToolShell } from "../components/ToolShell";
 import { convertDocxElementToPdf, renderDocxPreview } from "../lib/docx";
-import { sanitizeFilename, saveFile } from "../lib/utils";
+import { getUserErrorMessage, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function DocxToPdfTool() {
   const [file, setFile] = useState<File | null>(null);
@@ -24,7 +24,7 @@ export function DocxToPdfTool() {
     renderDocxPreview(file, previewRef.current)
       .catch((e) => {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : "Could not preview this document");
+          setError(getUserErrorMessage(e, "Couldn't preview this document. Make sure it's a valid .docx file."));
         }
       })
       .finally(() => {
@@ -50,9 +50,7 @@ export function DocxToPdfTool() {
       });
       setProgress("Done!");
     } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) {
-        setError(e instanceof Error ? e.message : "Conversion failed");
-      }
+      setError(getUserErrorMessage(e, "Couldn't convert this document to PDF. Try again."));
     } finally {
       setLoading(false);
     }

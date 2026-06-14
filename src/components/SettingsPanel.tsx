@@ -10,6 +10,7 @@ import {
   type SaveStartIn,
 } from "../lib/save";
 import { saveModeLabel, saveStartInLabel } from "../lib/save-settings";
+import { getUserErrorMessage } from "../lib/utils";
 import { Button } from "./Button";
 import { Field, StatusMessage, selectClassName } from "./ToolShell";
 
@@ -41,8 +42,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
       setSettings(next);
       setMessage(`Saving to "${next.folderLabel}" from now on.`);
     } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      setError(e instanceof Error ? e.message : "Could not choose folder");
+      setError(getUserErrorMessage(e, "Couldn't choose a save folder. Try Chrome or Edge on desktop."));
     } finally {
       setBusy(false);
     }

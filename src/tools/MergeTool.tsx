@@ -6,7 +6,7 @@ import { PdfFileList } from "../components/PdfFileList";
 import { StatusMessage, ToolShell } from "../components/ToolShell";
 import { loadPdfFile, mergePdfs } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { sanitizeFilename, saveFile } from "../lib/utils";
+import { getUserErrorMessage, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function MergeTool() {
   const [pdfs, setPdfs] = useState<LoadedPdf[]>([]);
@@ -25,7 +25,7 @@ export function MergeTool() {
         mime: "application/pdf",
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Merge failed");
+      setError(getUserErrorMessage(e, "Couldn't merge these PDFs. Check that every file opens normally."));
     } finally {
       setLoading(false);
     }

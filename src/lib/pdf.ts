@@ -1,5 +1,5 @@
-import * as pdfjsLib from "pdfjs-dist";
-import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import { PDFDocument, degrees, rgb, StandardFonts, type PDFPage } from "pdf-lib";
 import type { LoadedPdf, PagePreview } from "../types";
 import { uniqueId } from "./utils";

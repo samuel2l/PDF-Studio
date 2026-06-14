@@ -4,7 +4,7 @@ import { Button } from "../components/Button";
 import { FileDropzone } from "../components/FileDropzone";
 import { StatusMessage, ToolShell } from "../components/ToolShell";
 import { imagesToPdf } from "../lib/pdf";
-import { saveFile } from "../lib/utils";
+import { getUserErrorMessage, saveFile } from "../lib/utils";
 
 export function ImagesToPdfTool() {
   const [files, setFiles] = useState<File[]>([]);
@@ -23,7 +23,7 @@ export function ImagesToPdfTool() {
         mime: "application/pdf",
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Conversion failed");
+      setError(getUserErrorMessage(e, "Couldn't create the PDF from your images. Try again."));
     } finally {
       setLoading(false);
     }

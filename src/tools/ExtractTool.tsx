@@ -6,7 +6,7 @@ import { PageGrid } from "../components/PageGrid";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
 import { buildPagePreviews, extractPages, loadPdfFile } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
+import { getUserErrorMessage, parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function ExtractTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -33,7 +33,7 @@ export function ExtractTool() {
         mime: "application/pdf",
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Extract failed");
+      setError(getUserErrorMessage(e, "Couldn't extract those pages. Try again."));
     } finally {
       setLoading(false);
     }
