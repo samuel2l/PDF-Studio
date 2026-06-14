@@ -5,7 +5,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
 import { compressPdf, loadPdfFile } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { downloadBytes, formatBytes, sanitizeFilename } from "../lib/utils";
+import { formatBytes, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function CompressTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -38,9 +38,14 @@ export function CompressTool() {
         result && (
           <Button
             icon={<Download className="h-4 w-4" />}
-            onClick={() =>
-              downloadBytes(result.bytes, `${sanitizeFilename(pdf!.name)}_compressed.pdf`)
-            }
+            onClick={async () => {
+              if (!result || !pdf) return;
+              await saveFile({
+                data: result.bytes,
+                filename: `${sanitizeFilename(pdf.name)}_compressed.pdf`,
+                mime: "application/pdf",
+              });
+            }}
           >
             Download compressed PDF
           </Button>

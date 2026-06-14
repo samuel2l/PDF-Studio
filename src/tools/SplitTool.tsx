@@ -3,9 +3,8 @@ import { useState } from "react";
 import { Button } from "../components/Button";
 import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName } from "../components/ToolShell";
-import { loadPdfFile, splitPdfByRanges, splitPdfEveryPage } from "../lib/pdf";
+import { exportMultiplePdfs, loadPdfFile, splitPdfByRanges, splitPdfEveryPage } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { downloadBytes } from "../lib/utils";
 
 export function SplitTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -21,7 +20,7 @@ export function SplitTool() {
     try {
       if (mode === "every") {
         const parts = await splitPdfEveryPage(pdf);
-        for (const part of parts) downloadBytes(part.bytes, part.name);
+        await exportMultiplePdfs(parts);
       } else {
         const ranges = rangesInput
           .split(",")
@@ -39,7 +38,7 @@ export function SplitTool() {
         }
 
         const parts = await splitPdfByRanges(pdf, ranges);
-        for (const part of parts) downloadBytes(part.bytes, part.name);
+        await exportMultiplePdfs(parts);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Split failed");

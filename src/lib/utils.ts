@@ -1,3 +1,4 @@
+/** @deprecated Use saveFile from ./save instead */
 export function downloadBytes(data: Uint8Array, filename: string, mime = "application/pdf") {
   const blob = new Blob([data], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -7,6 +8,8 @@ export function downloadBytes(data: Uint8Array, filename: string, mime = "applic
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+export { saveFile, saveFiles } from "./save";
 
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";

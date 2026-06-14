@@ -6,7 +6,7 @@ import { PdfFileList } from "../components/PdfFileList";
 import { StatusMessage, ToolShell } from "../components/ToolShell";
 import { loadPdfFile, mergePdfs } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { downloadBytes, sanitizeFilename } from "../lib/utils";
+import { sanitizeFilename, saveFile } from "../lib/utils";
 
 export function MergeTool() {
   const [pdfs, setPdfs] = useState<LoadedPdf[]>([]);
@@ -19,7 +19,11 @@ export function MergeTool() {
     setError(null);
     try {
       const bytes = await mergePdfs(pdfs);
-      downloadBytes(bytes, `${sanitizeFilename(pdfs[0].name)}_merged.pdf`);
+      await saveFile({
+        data: bytes,
+        filename: `${sanitizeFilename(pdfs[0].name)}_merged.pdf`,
+        mime: "application/pdf",
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Merge failed");
     } finally {

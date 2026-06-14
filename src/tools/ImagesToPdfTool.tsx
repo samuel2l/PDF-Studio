@@ -4,7 +4,7 @@ import { Button } from "../components/Button";
 import { FileDropzone } from "../components/FileDropzone";
 import { StatusMessage, ToolShell } from "../components/ToolShell";
 import { imagesToPdf } from "../lib/pdf";
-import { downloadBytes } from "../lib/utils";
+import { saveFile } from "../lib/utils";
 
 export function ImagesToPdfTool() {
   const [files, setFiles] = useState<File[]>([]);
@@ -17,7 +17,11 @@ export function ImagesToPdfTool() {
     setError(null);
     try {
       const bytes = await imagesToPdf(files);
-      downloadBytes(bytes, "images_combined.pdf");
+      await saveFile({
+        data: bytes,
+        filename: "images_combined.pdf",
+        mime: "application/pdf",
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Conversion failed");
     } finally {

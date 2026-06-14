@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "../components/Button";
 import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, selectClassName } from "../components/ToolShell";
-import { downloadImagesAsZip, loadPdfFile, pdfToImages } from "../lib/pdf";
+import { exportImages, loadPdfFile, pdfToImages } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
 
 export function PdfToImagesTool() {
@@ -20,7 +20,7 @@ export function PdfToImagesTool() {
     setError(null);
     try {
       const images = await pdfToImages(pdf, format, quality, scale);
-      await downloadImagesAsZip(images);
+      await exportImages(images);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Export failed");
     } finally {

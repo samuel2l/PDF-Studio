@@ -11,7 +11,7 @@ import {
   loadPdfFile,
 } from "../lib/pdf";
 import type { LoadedPdf, PagePreview } from "../types";
-import { downloadBytes, parsePageRanges, sanitizeFilename } from "../lib/utils";
+import { parsePageRanges, sanitizeFilename, saveFile } from "../lib/utils";
 
 export function OrganizeTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -44,7 +44,11 @@ export function OrganizeTool() {
     setError(null);
     try {
       const bytes = await applyOrganizedPages(pages, sourceMap);
-      downloadBytes(bytes, `${sanitizeFilename(pdf.name)}_organized.pdf`);
+      await saveFile({
+        data: bytes,
+        filename: `${sanitizeFilename(pdf.name)}_organized.pdf`,
+        mime: "application/pdf",
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Export failed");
     } finally {

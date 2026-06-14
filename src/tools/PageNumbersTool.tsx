@@ -5,7 +5,7 @@ import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName, selectClassName } from "../components/ToolShell";
 import { addPageNumbers, loadPdfFile } from "../lib/pdf";
 import type { LoadedPdf } from "../types";
-import { downloadBytes, sanitizeFilename } from "../lib/utils";
+import { sanitizeFilename, saveFile } from "../lib/utils";
 
 export function PageNumbersTool() {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
@@ -24,7 +24,11 @@ export function PageNumbersTool() {
     setError(null);
     try {
       const bytes = await addPageNumbers(pdf, { position, startAt, prefix, fontSize });
-      downloadBytes(bytes, `${sanitizeFilename(pdf.name)}_numbered.pdf`);
+      await saveFile({
+        data: bytes,
+        filename: `${sanitizeFilename(pdf.name)}_numbered.pdf`,
+        mime: "application/pdf",
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add page numbers");
     } finally {

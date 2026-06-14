@@ -400,16 +400,17 @@ function drawCenteredWatermark(
   });
 }
 
-export async function downloadImagesAsZip(
+import { saveFile, saveFiles } from "./save";
+
+export async function exportImages(
   images: { name: string; blob: Blob }[],
 ): Promise<void> {
   if (images.length === 1) {
-    const url = URL.createObjectURL(images[0].blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = images[0].name;
-    a.click();
-    URL.revokeObjectURL(url);
+    await saveFile({
+      data: images[0].blob,
+      filename: images[0].name,
+      mime: images[0].blob.type || "image/png",
+    });
     return;
   }
 
@@ -419,10 +420,21 @@ export async function downloadImagesAsZip(
     zip.file(image.name, image.blob);
   }
   const blob = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "pdf_pages.zip";
-  a.click();
-  URL.revokeObjectURL(url);
+  await saveFile({
+    data: blob,
+    filename: "pdf_pages.zip",
+    mime: "application/zip",
+  });
+}
+
+export async function exportMultiplePdfs(
+  files: { name: string; bytes: Uint8Array }[],
+): Promise<void> {
+  await saveFiles(
+    files.map((file) => ({
+      data: file.bytes,
+      filename: file.name,
+      mime: "application/pdf",
+    })),
+  );
 }

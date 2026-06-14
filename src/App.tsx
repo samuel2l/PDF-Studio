@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Shield, Sparkles } from "lucide-react";
+import { SaveSettingsBadge, SettingsPanel } from "./components/SettingsPanel";
 import { categoryLabels, tools } from "./config/tools";
 import type { ToolId } from "./types";
 import { CompressTool } from "./tools/CompressTool";
