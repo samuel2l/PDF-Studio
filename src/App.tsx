@@ -4,6 +4,7 @@ import { SaveSettingsBadge, SettingsPanel } from "./components/SettingsPanel";
 import { categoryLabels, tools } from "./config/tools";
 import type { ToolId } from "./types";
 import { CompressTool } from "./tools/CompressTool";
+import { DocxToPdfTool } from "./tools/DocxToPdfTool";
 import { ExtractTool } from "./tools/ExtractTool";
 import { ImagesToPdfTool } from "./tools/ImagesToPdfTool";
 import { MergeTool } from "./tools/MergeTool";
@@ -22,6 +23,7 @@ const toolComponents: Record<ToolId, () => ReactNode> = {
   extract: ExtractTool,
   rotate: RotateTool,
   "images-to-pdf": ImagesToPdfTool,
+  "docx-to-pdf": DocxToPdfTool,
   "pdf-to-images": PdfToImagesTool,
   watermark: WatermarkTool,
   "page-numbers": PageNumbersTool,

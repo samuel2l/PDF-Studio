@@ -2,10 +2,13 @@
 
 Free, private PDF tools that run entirely in the browser. No uploads, no accounts, no paywalls.
 
+I built this because I was tired of being prompted to pay just to do simple PDF manipulation.
+
 ## Features
 
 - Compress, merge, split, organize, extract, and rotate PDFs
 - Images ↔ PDF conversion
+- Word (DOCX) to PDF conversion
 - Watermarks and page numbers
 - Choose where files save (Downloads, Desktop, or a folder on your computer)
 

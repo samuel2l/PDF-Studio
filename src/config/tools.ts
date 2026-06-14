@@ -3,6 +3,7 @@ import {
   FileImage,
   FileOutput,
   FilePlus2,
+  FileType,
   Hash,
   LayoutGrid,
   Minimize2,
@@ -60,6 +61,13 @@ export const tools: ToolDefinition[] = [
     name: "Images to PDF",
     description: "Convert JPG and PNG images into a PDF",
     icon: FilePlus2,
+    category: "convert",
+  },
+  {
+    id: "docx-to-pdf",
+    name: "Word to PDF",
+    description: "Convert DOCX documents to PDF",
+    icon: FileType,
     category: "convert",
   },
   {

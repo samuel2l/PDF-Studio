@@ -8,6 +8,7 @@ export type ToolId =
   | "extract"
   | "rotate"
   | "images-to-pdf"
+  | "docx-to-pdf"
   | "pdf-to-images"
   | "watermark"
   | "page-numbers";
