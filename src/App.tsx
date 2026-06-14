@@ -29,6 +29,8 @@ const toolComponents: Record<ToolId, () => ReactNode> = {
 
 export default function App() {
   const [activeTool, setActiveTool] = useState<ToolId>("compress");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsVersion, setSettingsVersion] = useState(0);
   const ActiveComponent = toolComponents[activeTool];
 
   const grouped = tools.reduce(
@@ -55,12 +57,26 @@ export default function App() {
               <p className="text-xs text-slate-500">Free tools · 100% in your browser</p>
             </div>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 sm:flex">
-            <Shield className="h-3.5 w-3.5" />
-            Files never leave your device
+          <div className="flex items-center gap-2">
+            <SaveSettingsBadge
+              key={settingsVersion}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 sm:flex">
+              <Shield className="h-3.5 w-3.5" />
+              Files never leave your device
+            </div>
           </div>
         </div>
       </header>
+
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false);
+          setSettingsVersion((v) => v + 1);
+        }}
+      />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr] lg:px-6 lg:py-8">
         <aside className="glass h-fit rounded-3xl p-4 lg:sticky lg:top-6">
