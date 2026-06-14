@@ -13,7 +13,7 @@ import {
 } from "./save-settings";
 
 export interface SaveResult {
-  method: "picker" | "folder" | "download";
+  method: "picker" | "folder" | "download" | "cancelled";
   filename: string;
 }
 
@@ -137,7 +137,7 @@ export async function saveFile(input: SaveFileInput): Promise<SaveResult> {
       return await saveWithPicker(blob, input.filename, mime, settings.startIn);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
-        throw error;
+        return { method: "cancelled", filename: input.filename };
       }
     }
   }

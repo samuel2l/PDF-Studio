@@ -55,6 +55,7 @@ export async function ensureDirectoryPermission(
   handle: FileSystemDirectoryHandle,
 ): Promise<boolean> {
   const opts = { mode: "readwrite" as const };
+  if (!handle.queryPermission || !handle.requestPermission) return true;
   if ((await handle.queryPermission(opts)) === "granted") return true;
   return (await handle.requestPermission(opts)) === "granted";
 }
