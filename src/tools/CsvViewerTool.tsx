@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "../components/Button";
+import { CsvCell } from "../components/CsvCell";
 import { CsvFilterBuilder } from "../components/CsvFilterBuilder";
 import { FileDropzone } from "../components/FileDropzone";
 import { ScrollHint } from "../components/ScrollHint";
@@ -225,6 +226,11 @@ export function CsvViewerTool() {
                   {totalPages > 1 && (
                     <span className="text-slate-400"> · scroll down within the table for more rows</span>
                   )}
+                  <span className="text-slate-400"> · tap a cell or </span>
+                  <span className="inline-flex items-center gap-0.5 text-slate-400">
+                    <span className="rounded border border-slate-200 px-1 text-[10px]">copy</span>
+                    to grab the full value
+                  </span>
                 </p>
               </div>
 
@@ -270,12 +276,8 @@ export function CsvViewerTool() {
                             {rowStart + ri}
                           </td>
                           {row.map((cell, ci) => (
-                            <td
-                              key={ci}
-                              className="max-w-[240px] truncate px-3 py-2 text-slate-800"
-                              title={cell}
-                            >
-                              {cell || <span className="text-slate-300">—</span>}
+                            <td key={ci} className="px-2 py-1.5 text-slate-800">
+                              <CsvCell value={cell} />
                             </td>
                           ))}
                         </tr>

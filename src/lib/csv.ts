@@ -191,18 +191,97 @@ export function applyFilterRules(
   rules: CsvFilterRule[],
   logic: "and" | "or",
 ): string[][] {
+  const indices = rows.map((_, i) => i);
+  return applyFilterIndices(rows, indices, rules, logic).map((i) => rows[i]);
+}
+
+export function applyFilterIndices(
+  rows: string[][],
+  indices: number[],
+  rules: CsvFilterRule[],
+  logic: "and" | "or",
+): number[] {
   const active = rules.filter(
     (r) => VALUELESS_OPERATORS.includes(r.operator) || r.value.trim() !== "",
   );
-  if (active.length === 0) return rows;
+  if (active.length === 0) return indices;
 
-  return rows.filter((row) => {
+  return indices.filter((rowIndex) => {
+    const row = rows[rowIndex];
     const results = active.map((rule) => {
       const cell = row[rule.columnIndex] ?? "";
       return matchRule(cell, rule.operator, rule.value);
     });
     return logic === "and" ? results.every(Boolean) : results.some(Boolean);
   });
+}
+
+export function searchIndices(rows: string[][], indices: number[], query: string): number[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return indices;
+  return indices.filter((i) => rows[i].some((cell) => cell.toLowerCase().includes(q)));
+}
+
+export function sortIndices(
+  rows: string[][],
+  indices: number[],
+  columnIndex: number,
+  direction: "asc" | "desc",
+): number[] {
+  const sorted = [...indices];
+  sorted.sort((ai, bi) => {
+    const av = rows[ai][columnIndex] ?? "";
+    const bv = rows[bi][columnIndex] ?? "";
+    const an = Number(av);
+    const bn = Number(bv);
+    let cmp: number;
+    if (av !== "" && bv !== "" && !Number.isNaN(an) && !Number.isNaN(bn)) {
+      cmp = an - bn;
+    } else {
+      cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: "base" });
+    }
+    return direction === "asc" ? cmp : -cmp;
+  });
+  return sorted;
+}
+
+export function updateParsedCsvCell(
+  data: ParsedCsv,
+  rowIndex: number,
+  columnIndex: number,
+  value: string,
+): ParsedCsv {
+  const rows = data.rows.map((row, ri) =>
+    ri === rowIndex ? row.map((cell, ci) => (ci === columnIndex ? value : cell)) : row,
+  );
+  return { ...data, rows, totalRows: rows.length };
+}
+
+export function renameParsedCsvColumn(
+  data: ParsedCsv,
+  columnIndex: number,
+  name: string,
+): ParsedCsv {
+  const headers = data.headers.map((h, i) => (i === columnIndex ? name : h));
+  return { ...data, headers };
+}
+
+export function addParsedCsvColumn(data: ParsedCsv, name?: string): ParsedCsv {
+  const label = name ?? `Column ${data.headers.length + 1}`;
+  return {
+    ...data,
+    headers: [...data.headers, label],
+    rows: data.rows.map((row) => [...row, ""]),
+  };
+}
+
+export function deleteParsedCsvColumn(data: ParsedCsv, columnIndex: number): ParsedCsv {
+  if (data.headers.length <= 1) return data;
+  return {
+    ...data,
+    headers: data.headers.filter((_, i) => i !== columnIndex),
+    rows: data.rows.map((row) => row.filter((_, i) => i !== columnIndex)),
+  };
 }
 
 export function rowsToCsv(headers: string[], rows: string[][], delimiter: CsvDelimiter = ","): string {
