@@ -1,12 +1,12 @@
 import { Pencil, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { inputClassName } from "./ToolShell";
 
 interface CsvColumnHeaderProps {
   name: string;
   columnIndex: number;
   canDelete: boolean;
-  sortControl: React.ReactNode;
+  sortControl: ReactNode;
   onRename: (columnIndex: number, name: string) => void;
   onDelete: (columnIndex: number) => void;
 }

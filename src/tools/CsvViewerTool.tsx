@@ -3,23 +3,29 @@ import {
   ArrowUp,
   ArrowUpDown,
   Download,
+  Plus,
   Search,
   Table2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "../components/Button";
 import { CsvCell } from "../components/CsvCell";
+import { CsvColumnHeader } from "../components/CsvColumnHeader";
 import { CsvFilterBuilder } from "../components/CsvFilterBuilder";
 import { FileDropzone } from "../components/FileDropzone";
 import { ScrollHint } from "../components/ScrollHint";
 import { TablePagination } from "../components/TablePagination";
 import { Field, StatusMessage, ToolShell, inputClassName, selectClassName } from "../components/ToolShell";
 import {
-  applyFilterRules,
-  filterRows,
+  addParsedCsvColumn,
+  applyFilterIndices,
+  deleteParsedCsvColumn,
   parseCsv,
+  renameParsedCsvColumn,
   rowsToCsv,
-  sortRows,
+  searchIndices,
+  sortIndices,
+  updateParsedCsvCell,
   type CsvDelimiter,
   type CsvFilterRule,
   type ParsedCsv,
@@ -39,6 +45,7 @@ const PAGE_SIZE = 50;
 export function CsvViewerTool() {
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<ParsedCsv | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [delimiter, setDelimiter] = useState<CsvDelimiter | "auto">("auto");
   const [search, setSearch] = useState("");
   const [filterRules, setFilterRules] = useState<CsvFilterRule[]>([]);
@@ -55,6 +62,7 @@ export function CsvViewerTool() {
     setFilterRules([]);
     setSortCol(null);
     setPage(1);
+    setDirty(false);
     try {
       const text = await f.text();
       const parsed = parseCsv(text, delim === "auto" ? undefined : delim);
@@ -69,21 +77,20 @@ export function CsvViewerTool() {
     }
   };
 
-  const displayRows = useMemo(() => {
+  const displayRowIndices = useMemo(() => {
     if (!data) return [];
-    let rows = applyFilterRules(data.rows, filterRules, filterLogic);
-    rows = filterRows(rows, search);
-    if (sortCol !== null) rows = sortRows(rows, sortCol, sortDir);
-    return rows;
+    let indices = data.rows.map((_, i) => i);
+    indices = applyFilterIndices(data.rows, indices, filterRules, filterLogic);
+    indices = searchIndices(data.rows, indices, search);
+    if (sortCol !== null) indices = sortIndices(data.rows, indices, sortCol, sortDir);
+    return indices;
   }, [data, filterRules, filterLogic, search, sortCol, sortDir]);
 
-  const isFiltered =
-    filterRules.length > 0 || search.trim() !== "";
+  const isFiltered = filterRules.length > 0 || search.trim() !== "";
 
-  const totalPages = Math.max(1, Math.ceil(displayRows.length / PAGE_SIZE));
-  const pageRows = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const rowStart = displayRows.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const rowEnd = Math.min(page * PAGE_SIZE, displayRows.length);
+  const pageRowIndices = displayRowIndices.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const rowStart = displayRowIndices.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rowEnd = Math.min(page * PAGE_SIZE, displayRowIndices.length);
 
   const handleSort = (col: number) => {
     if (sortCol === col) {
@@ -95,13 +102,45 @@ export function CsvViewerTool() {
     setPage(1);
   };
 
-  const handleExport = async () => {
+  const handleCellSave = (rowIndex: number, columnIndex: number, value: string) => {
+    if (!data) return;
+    setData(updateParsedCsvCell(data, rowIndex, columnIndex, value));
+    setDirty(true);
+  };
+
+  const handleColumnRename = (columnIndex: number, name: string) => {
+    if (!data) return;
+    setData(renameParsedCsvColumn(data, columnIndex, name));
+    setDirty(true);
+  };
+
+  const handleColumnDelete = (columnIndex: number) => {
+    if (!data || data.headers.length <= 1) return;
+    setData(deleteParsedCsvColumn(data, columnIndex));
+    setDirty(true);
+    if (sortCol === columnIndex) setSortCol(null);
+    else if (sortCol !== null && sortCol > columnIndex) setSortCol(sortCol - 1);
+  };
+
+  const handleAddColumn = () => {
+    if (!data) return;
+    setData(addParsedCsvColumn(data));
+    setDirty(true);
+  };
+
+  const handleExport = async (filteredOnly: boolean) => {
     if (!data || !file) return;
     setExporting(true);
     try {
-      const csv = rowsToCsv(data.headers, displayRows, data.delimiter);
+      const rows = filteredOnly
+        ? displayRowIndices.map((i) => data.rows[i])
+        : data.rows;
+      const csv = rowsToCsv(data.headers, rows, data.delimiter);
       const base = file.name.replace(/\.csv$/i, "");
-      const suffix = isFiltered ? "_filtered" : "_export";
+      let suffix = "";
+      if (dirty) suffix = "_edited";
+      if (filteredOnly) suffix += "_filtered";
+      if (!suffix) suffix = "_export";
       await saveFile({
         data: new TextEncoder().encode(csv),
         filename: `${base}${suffix}.csv`,
@@ -126,17 +165,29 @@ export function CsvViewerTool() {
   return (
     <ToolShell
       title="CSV Viewer"
-      description="Open, filter, search, and sort CSV files in your browser. Build rules like “Column X equals Y and Column A equals B” — data never leaves your device."
+      description="Open, edit, filter, and export CSV files in your browser. Rename columns, edit cells, and download your changes — data never leaves your device."
       actions={
         data ? (
-          <Button
-            variant="secondary"
-            loading={exporting}
-            icon={<Download className="h-4 w-4" />}
-            onClick={handleExport}
-          >
-            Download {isFiltered ? "filtered" : ""} CSV
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {isFiltered && (
+              <Button
+                variant="ghost"
+                loading={exporting}
+                icon={<Download className="h-4 w-4" />}
+                onClick={() => handleExport(true)}
+              >
+                Download filtered
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              loading={exporting}
+              icon={<Download className="h-4 w-4" />}
+              onClick={() => handleExport(false)}
+            >
+              Download{dirty ? " edited" : ""} CSV
+            </Button>
+          </div>
         ) : undefined
       }
     >
@@ -151,6 +202,7 @@ export function CsvViewerTool() {
             setFile(null);
             setData(null);
             setFilterRules([]);
+            setDirty(false);
             setError(null);
           }}
         />
@@ -183,9 +235,14 @@ export function CsvViewerTool() {
                 {data.totalRows.toLocaleString()} total rows · {data.headers.length} columns
               </span>
               {file && <span>· {formatBytes(file.size)}</span>}
+              {dirty && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                  Unsaved edits
+                </span>
+              )}
               {isFiltered && (
                 <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-800">
-                  Showing {displayRows.length.toLocaleString()} of {data.totalRows.toLocaleString()}
+                  Showing {displayRowIndices.length.toLocaleString()} of {data.totalRows.toLocaleString()}
                 </span>
               )}
             </div>
@@ -217,20 +274,27 @@ export function CsvViewerTool() {
               />
             </div>
 
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-medium text-slate-500">
+                Click <span className="rounded border border-slate-200 px-1 text-[10px]">edit</span> on a cell
+                or column header to change values
+              </p>
+              <button
+                type="button"
+                onClick={handleAddColumn}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-brand-300 bg-white px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-50"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add column
+              </button>
+            </div>
+
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 px-1">
                 <p className="text-xs font-medium text-slate-500">
-                  {pageRows.length > 0
+                  {pageRowIndices.length > 0
                     ? `Showing ${rowStart.toLocaleString()}–${rowEnd.toLocaleString()} on this page`
                     : "No rows to display"}
-                  {totalPages > 1 && (
-                    <span className="text-slate-400"> · scroll down within the table for more rows</span>
-                  )}
-                  <span className="text-slate-400"> · tap a cell or </span>
-                  <span className="inline-flex items-center gap-0.5 text-slate-400">
-                    <span className="rounded border border-slate-200 px-1 text-[10px]">copy</span>
-                    to grab the full value
-                  </span>
                 </p>
               </div>
 
@@ -244,23 +308,31 @@ export function CsvViewerTool() {
                       {data.headers.map((header, i) => (
                         <th
                           key={`${header}-${i}`}
-                          className="border-b border-slate-200 px-3 py-2.5 text-xs font-semibold text-slate-700"
+                          className="border-b border-slate-200 px-2 py-2 text-xs text-slate-700"
                         >
-                          <button
-                            type="button"
-                            onClick={() => handleSort(i)}
-                            className="inline-flex max-w-[200px] items-center gap-1.5 truncate hover:text-brand-600"
-                            title={header || `Column ${i + 1}`}
-                          >
-                            <span className="truncate">{header || `Column ${i + 1}`}</span>
-                            <SortIcon col={i} />
-                          </button>
+                          <CsvColumnHeader
+                            name={header}
+                            columnIndex={i}
+                            canDelete={data.headers.length > 1}
+                            onRename={handleColumnRename}
+                            onDelete={handleColumnDelete}
+                            sortControl={
+                              <button
+                                type="button"
+                                onClick={() => handleSort(i)}
+                                className="shrink-0 rounded p-0.5 hover:text-brand-600"
+                                title="Sort column"
+                              >
+                                <SortIcon col={i} />
+                              </button>
+                            }
+                          />
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {pageRows.length === 0 ? (
+                    {pageRowIndices.length === 0 ? (
                       <tr>
                         <td
                           colSpan={data.headers.length + 1}
@@ -270,14 +342,17 @@ export function CsvViewerTool() {
                         </td>
                       </tr>
                     ) : (
-                      pageRows.map((row, ri) => (
-                        <tr key={ri} className="hover:bg-brand-50/40">
+                      pageRowIndices.map((rowIndex, ri) => (
+                        <tr key={rowIndex} className="hover:bg-brand-50/40">
                           <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">
                             {rowStart + ri}
                           </td>
-                          {row.map((cell, ci) => (
+                          {data.rows[rowIndex].map((cell, ci) => (
                             <td key={ci} className="px-2 py-1.5 text-slate-800">
-                              <CsvCell value={cell} />
+                              <CsvCell
+                                value={cell}
+                                onSave={(value) => handleCellSave(rowIndex, ci, value)}
+                              />
                             </td>
                           ))}
                         </tr>
@@ -291,7 +366,7 @@ export function CsvViewerTool() {
             <TablePagination
               page={page}
               pageSize={PAGE_SIZE}
-              totalItems={displayRows.length}
+              totalItems={displayRowIndices.length}
               onPageChange={setPage}
             />
           </>

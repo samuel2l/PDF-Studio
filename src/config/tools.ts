@@ -95,7 +95,7 @@ export const tools: ToolDefinition[] = [
   {
     id: "csv-viewer",
     name: "CSV Viewer",
-    description: "Open, filter, search, and sort spreadsheet files",
+    description: "View, edit, filter, and export spreadsheets",
     icon: Table2,
     category: "view",
   },
