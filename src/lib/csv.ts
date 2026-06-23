@@ -110,3 +110,112 @@ export function filterRows(rows: string[][], query: string): string[][] {
   if (!q) return rows;
   return rows.filter((row) => row.some((cell) => cell.toLowerCase().includes(q)));
 }
+
+export type FilterOperator =
+  | "eq"
+  | "neq"
+  | "contains"
+  | "not_contains"
+  | "starts"
+  | "ends"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte"
+  | "empty"
+  | "not_empty";
+
+export interface CsvFilterRule {
+  id: string;
+  columnIndex: number;
+  operator: FilterOperator;
+  value: string;
+}
+
+export const FILTER_OPERATOR_LABELS: Record<FilterOperator, string> = {
+  eq: "equals",
+  neq: "does not equal",
+  contains: "contains",
+  not_contains: "does not contain",
+  starts: "starts with",
+  ends: "ends with",
+  gt: "greater than",
+  gte: "greater or equal",
+  lt: "less than",
+  lte: "less or equal",
+  empty: "is empty",
+  not_empty: "is not empty",
+};
+
+export const VALUELESS_OPERATORS: FilterOperator[] = ["empty", "not_empty"];
+
+function matchRule(cell: string, operator: FilterOperator, value: string): boolean {
+  const v = value.trim();
+  const c = cell.trim();
+  const cn = Number(c);
+  const vn = Number(v);
+  const numeric = c !== "" && v !== "" && !Number.isNaN(cn) && !Number.isNaN(vn);
+
+  switch (operator) {
+    case "eq":
+      return numeric ? cn === vn : c.toLowerCase() === v.toLowerCase();
+    case "neq":
+      return numeric ? cn !== vn : c.toLowerCase() !== v.toLowerCase();
+    case "contains":
+      return c.toLowerCase().includes(v.toLowerCase());
+    case "not_contains":
+      return !c.toLowerCase().includes(v.toLowerCase());
+    case "starts":
+      return c.toLowerCase().startsWith(v.toLowerCase());
+    case "ends":
+      return c.toLowerCase().endsWith(v.toLowerCase());
+    case "gt":
+      return numeric ? cn > vn : c.localeCompare(v, undefined, { numeric: true }) > 0;
+    case "gte":
+      return numeric ? cn >= vn : c.localeCompare(v, undefined, { numeric: true }) >= 0;
+    case "lt":
+      return numeric ? cn < vn : c.localeCompare(v, undefined, { numeric: true }) < 0;
+    case "lte":
+      return numeric ? cn <= vn : c.localeCompare(v, undefined, { numeric: true }) <= 0;
+    case "empty":
+      return c === "";
+    case "not_empty":
+      return c !== "";
+    default:
+      return true;
+  }
+}
+
+export function applyFilterRules(
+  rows: string[][],
+  rules: CsvFilterRule[],
+  logic: "and" | "or",
+): string[][] {
+  const active = rules.filter(
+    (r) => VALUELESS_OPERATORS.includes(r.operator) || r.value.trim() !== "",
+  );
+  if (active.length === 0) return rows;
+
+  return rows.filter((row) => {
+    const results = active.map((rule) => {
+      const cell = row[rule.columnIndex] ?? "";
+      return matchRule(cell, rule.operator, rule.value);
+    });
+    return logic === "and" ? results.every(Boolean) : results.some(Boolean);
+  });
+}
+
+export function rowsToCsv(headers: string[], rows: string[][], delimiter: CsvDelimiter = ","): string {
+  const escape = (cell: string) => {
+    if (/[",\n\r]/.test(cell) || cell.includes(delimiter)) {
+      return `"${cell.replace(/"/g, '""')}"`;
+    }
+    return cell;
+  };
+
+  const lines = [headers.map(escape).join(delimiter)];
+  for (const row of rows) {
+    lines.push(row.map(escape).join(delimiter));
+  }
+  return lines.join("\n");
+}

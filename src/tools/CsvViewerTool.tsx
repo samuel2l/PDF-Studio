@@ -4,20 +4,26 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   Search,
   Table2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Button } from "../components/Button";
+import { CsvFilterBuilder } from "../components/CsvFilterBuilder";
 import { FileDropzone } from "../components/FileDropzone";
 import { Field, StatusMessage, ToolShell, inputClassName, selectClassName } from "../components/ToolShell";
 import {
+  applyFilterRules,
   filterRows,
   parseCsv,
+  rowsToCsv,
   sortRows,
   type CsvDelimiter,
+  type CsvFilterRule,
   type ParsedCsv,
 } from "../lib/csv";
-import { formatBytes, getUserErrorMessage } from "../lib/utils";
+import { formatBytes, getUserErrorMessage, saveFile } from "../lib/utils";
 
 const DELIMITER_OPTIONS: { value: CsvDelimiter | "auto"; label: string }[] = [
   { value: "auto", label: "Auto-detect" },
@@ -34,14 +40,18 @@ export function CsvViewerTool() {
   const [data, setData] = useState<ParsedCsv | null>(null);
   const [delimiter, setDelimiter] = useState<CsvDelimiter | "auto">("auto");
   const [search, setSearch] = useState("");
+  const [filterRules, setFilterRules] = useState<CsvFilterRule[]>([]);
+  const [filterLogic, setFilterLogic] = useState<"and" | "or">("and");
   const [sortCol, setSortCol] = useState<number | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const loadFile = async (f: File, delim: CsvDelimiter | "auto") => {
     setError(null);
     setSearch("");
+    setFilterRules([]);
     setSortCol(null);
     setPage(1);
     try {
@@ -60,10 +70,14 @@ export function CsvViewerTool() {
 
   const displayRows = useMemo(() => {
     if (!data) return [];
-    let rows = filterRows(data.rows, search);
+    let rows = applyFilterRules(data.rows, filterRules, filterLogic);
+    rows = filterRows(rows, search);
     if (sortCol !== null) rows = sortRows(rows, sortCol, sortDir);
     return rows;
-  }, [data, search, sortCol, sortDir]);
+  }, [data, filterRules, filterLogic, search, sortCol, sortDir]);
+
+  const isFiltered =
+    filterRules.length > 0 || search.trim() !== "";
 
   const totalPages = Math.max(1, Math.ceil(displayRows.length / PAGE_SIZE));
   const pageRows = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -78,6 +92,25 @@ export function CsvViewerTool() {
     setPage(1);
   };
 
+  const handleExport = async () => {
+    if (!data || !file) return;
+    setExporting(true);
+    try {
+      const csv = rowsToCsv(data.headers, displayRows, data.delimiter);
+      const base = file.name.replace(/\.csv$/i, "");
+      const suffix = isFiltered ? "_filtered" : "_export";
+      await saveFile({
+        data: new TextEncoder().encode(csv),
+        filename: `${base}${suffix}.csv`,
+        mime: "text/csv",
+      });
+    } catch (e) {
+      setError(getUserErrorMessage(e, "Couldn't export this CSV. Try again."));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const SortIcon = ({ col }: { col: number }) => {
     if (sortCol !== col) return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
     return sortDir === "asc" ? (
@@ -90,7 +123,19 @@ export function CsvViewerTool() {
   return (
     <ToolShell
       title="CSV Viewer"
-      description="Open and explore CSV files in your browser — search, sort, and paginate. Your data never leaves your device."
+      description="Open, filter, search, and sort CSV files in your browser. Build rules like “Column X equals Y and Column A equals B” — data never leaves your device."
+      actions={
+        data ? (
+          <Button
+            variant="secondary"
+            loading={exporting}
+            icon={<Download className="h-4 w-4" />}
+            onClick={handleExport}
+          >
+            Download {isFiltered ? "filtered" : ""} CSV
+          </Button>
+        ) : undefined
+      }
     >
       <div className="space-y-6">
         <FileDropzone
@@ -102,6 +147,7 @@ export function CsvViewerTool() {
           onClear={() => {
             setFile(null);
             setData(null);
+            setFilterRules([]);
             setError(null);
           }}
         />
@@ -131,21 +177,35 @@ export function CsvViewerTool() {
             <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
               <span className="inline-flex items-center gap-1.5 font-medium text-slate-800">
                 <Table2 className="h-4 w-4 text-brand-600" />
-                {data.totalRows.toLocaleString()} rows · {data.headers.length} columns
+                {data.totalRows.toLocaleString()} total rows · {data.headers.length} columns
               </span>
               {file && <span>· {formatBytes(file.size)}</span>}
-              {search && (
-                <span>
-                  · {displayRows.length.toLocaleString()} matching &ldquo;{search}&rdquo;
+              {isFiltered && (
+                <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-800">
+                  Showing {displayRows.length.toLocaleString()} of {data.totalRows.toLocaleString()}
                 </span>
               )}
             </div>
+
+            <CsvFilterBuilder
+              headers={data.headers}
+              rules={filterRules}
+              logic={filterLogic}
+              onRulesChange={(rules) => {
+                setFilterRules(rules);
+                setPage(1);
+              }}
+              onLogicChange={(logic) => {
+                setFilterLogic(logic);
+                setPage(1);
+              }}
+            />
 
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 className={`${inputClassName} pl-10`}
-                placeholder="Search all columns…"
+                placeholder="Quick search across all columns…"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -187,7 +247,7 @@ export function CsvViewerTool() {
                           colSpan={data.headers.length + 1}
                           className="px-4 py-8 text-center text-slate-500"
                         >
-                          No rows match your search.
+                          No rows match your filters.
                         </td>
                       </tr>
                     ) : (
