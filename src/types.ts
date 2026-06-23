@@ -11,14 +11,15 @@ export type ToolId =
   | "docx-to-pdf"
   | "pdf-to-images"
   | "watermark"
-  | "page-numbers";
+  | "page-numbers"
+  | "csv-viewer";
 
 export interface ToolDefinition {
   id: ToolId;
   name: string;
   description: string;
   icon: LucideIcon;
-  category: "edit" | "convert" | "optimize";
+  category: "edit" | "convert" | "optimize" | "view";
 }
 
 export interface PagePreview {

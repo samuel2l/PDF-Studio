@@ -10,6 +10,7 @@ import {
   RotateCw,
   Split,
   Stamp,
+  Table2,
 } from "lucide-react";
 import type { ToolDefinition } from "../types";
 
@@ -91,10 +92,18 @@ export const tools: ToolDefinition[] = [
     icon: Hash,
     category: "edit",
   },
+  {
+    id: "csv-viewer",
+    name: "CSV Viewer",
+    description: "Open, search, and sort spreadsheet files",
+    icon: Table2,
+    category: "view",
+  },
 ];
 
 export const categoryLabels = {
   edit: "Edit & Organize",
   convert: "Convert",
   optimize: "Optimize",
+  view: "View",
 } as const;

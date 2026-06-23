@@ -4,6 +4,7 @@ import { SaveSettingsBadge, SettingsPanel } from "./components/SettingsPanel";
 import { categoryLabels, tools } from "./config/tools";
 import type { ToolId } from "./types";
 import { CompressTool } from "./tools/CompressTool";
+import { CsvViewerTool } from "./tools/CsvViewerTool";
 import { DocxToPdfTool } from "./tools/DocxToPdfTool";
 import { ExtractTool } from "./tools/ExtractTool";
 import { ImagesToPdfTool } from "./tools/ImagesToPdfTool";
@@ -27,6 +28,7 @@ const toolComponents: Record<ToolId, () => ReactNode> = {
   "pdf-to-images": PdfToImagesTool,
   watermark: WatermarkTool,
   "page-numbers": PageNumbersTool,
+  "csv-viewer": CsvViewerTool,
 };
 
 export default function App() {
@@ -40,7 +42,7 @@ export default function App() {
       acc[tool.category].push(tool);
       return acc;
     },
-    { edit: [], convert: [], optimize: [] } as Record<
+    { edit: [], convert: [], optimize: [], view: [] } as Record<
       keyof typeof categoryLabels,
       typeof tools
     >,
