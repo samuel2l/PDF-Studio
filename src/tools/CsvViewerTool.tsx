@@ -2,8 +2,6 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Search,
   Table2,
@@ -12,6 +10,8 @@ import { useMemo, useState } from "react";
 import { Button } from "../components/Button";
 import { CsvFilterBuilder } from "../components/CsvFilterBuilder";
 import { FileDropzone } from "../components/FileDropzone";
+import { ScrollHint } from "../components/ScrollHint";
+import { TablePagination } from "../components/TablePagination";
 import { Field, StatusMessage, ToolShell, inputClassName, selectClassName } from "../components/ToolShell";
 import {
   applyFilterRules,
@@ -81,6 +81,8 @@ export function CsvViewerTool() {
 
   const totalPages = Math.max(1, Math.ceil(displayRows.length / PAGE_SIZE));
   const pageRows = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const rowStart = displayRows.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rowEnd = Math.min(page * PAGE_SIZE, displayRows.length);
 
   const handleSort = (col: number) => {
     if (sortCol === col) {
@@ -214,8 +216,19 @@ export function CsvViewerTool() {
               />
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
-              <div className="max-h-[min(60vh,520px)] overflow-auto">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                <p className="text-xs font-medium text-slate-500">
+                  {pageRows.length > 0
+                    ? `Showing ${rowStart.toLocaleString()}–${rowEnd.toLocaleString()} on this page`
+                    : "No rows to display"}
+                  {totalPages > 1 && (
+                    <span className="text-slate-400"> · scroll down within the table for more rows</span>
+                  )}
+                </p>
+              </div>
+
+              <ScrollHint hint="Scroll down for more rows" maxHeight="min(60vh, 520px)">
                 <table className="w-full min-w-max border-collapse text-left text-sm">
                   <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm">
                     <tr>
@@ -254,7 +267,7 @@ export function CsvViewerTool() {
                       pageRows.map((row, ri) => (
                         <tr key={ri} className="hover:bg-brand-50/40">
                           <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-400">
-                            {(page - 1) * PAGE_SIZE + ri + 1}
+                            {rowStart + ri}
                           </td>
                           {row.map((cell, ci) => (
                             <td
@@ -270,36 +283,15 @@ export function CsvViewerTool() {
                     )}
                   </tbody>
                 </table>
-              </div>
+              </ScrollHint>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-sm text-slate-500">
-                  Page {page} of {totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+            <TablePagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              totalItems={displayRows.length}
+              onPageChange={setPage}
+            />
           </>
         )}
 

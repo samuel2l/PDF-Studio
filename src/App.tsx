@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Shield, Sparkles } from "lucide-react";
 import { SaveSettingsBadge, SettingsPanel } from "./components/SettingsPanel";
+import { ScrollHint } from "./components/ScrollHint";
 import { categoryLabels, tools } from "./config/tools";
 import type { ToolId } from "./types";
 import { CompressTool } from "./tools/CompressTool";
@@ -83,8 +84,13 @@ export default function App() {
       />
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[280px_1fr] lg:px-6 lg:py-8">
-        <aside className="glass h-fit rounded-3xl p-4 lg:sticky lg:top-6">
-          <nav className="space-y-5">
+        <aside className="glass h-fit rounded-3xl p-4 lg:sticky lg:top-6 lg:max-h-[calc(100vh-5rem)] lg:overflow-hidden">
+          <ScrollHint
+            className="border-0 !rounded-2xl lg:!border lg:!border-transparent"
+            maxHeight="min(70vh, calc(100vh - 6rem))"
+            hint="More tools below"
+          >
+            <nav className="space-y-5 pr-1">
             {(Object.keys(categoryLabels) as Array<keyof typeof categoryLabels>).map((category) => (
               <div key={category}>
                 <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
@@ -119,7 +125,8 @@ export default function App() {
                 </ul>
               </div>
             ))}
-          </nav>
+            </nav>
+          </ScrollHint>
         </aside>
 
         <main>
